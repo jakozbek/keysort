@@ -89,55 +89,37 @@ impl Key {
                         }
                     }
 
-                    // TODO: should we increment index for a plant node?
+                    // increment the index for the next node
                     index = index + 1;
 
-                    if true_group.len() == 1 {
-                        let plant = true_group
-                            .pop()
-                            .expect("Plant will always exist because we check the lenght");
-
-                        let plant_node = PlantNode {
-                            plant,
-                            prev_node: current_index,
+                    for boolean in [true, false] {
+                        let mut group = if boolean {
+                            true_group.clone()
+                        } else {
+                            false_group.clone()
                         };
 
-                        nodes.insert(index, Node::Plant(plant_node));
-                    } else {
-                        let true_option = OptionNode {
-                            prev_node: Some(current_index),
-                            possibilities: true_group,
-                            characteristic: next_characteristic.unwrap().to_string(),
-                        };
+                        if group.len() == 1 {
+                            let plant = group.pop()
+                                .expect("Plant will always exist because we check the lenght");
 
-                        indexes_to_check.push_back(index);
+                            let plant_node = PlantNode {
+                                plant,
+                                prev_node: current_index,
+                            };
 
-                        nodes.insert(index, Node::Option(true_option));
-                    }
+                            nodes.insert(index, Node::Plant(plant_node));
+                        } else {
+                            let true_option = OptionNode {
+                                prev_node: Some(current_index),
+                                possibilities: group,
+                                characteristic: next_characteristic.unwrap().to_string(),
+                            };
 
-                    index = index + 1;
+                            indexes_to_check.push_back(index);
 
-                    if false_group.len() == 1 {
-                        let plant = false_group
-                            .pop()
-                            .expect("Plant will always exist because we check the lenght");
-
-                        let plant_node = PlantNode {
-                            plant,
-                            prev_node: current_index,
-                        };
-
-                        nodes.insert(index, Node::Plant(plant_node));
-                    } else {
-                        let false_option = OptionNode {
-                            prev_node: Some(current_index),
-                            possibilities: false_group,
-                            characteristic: next_characteristic.unwrap().to_string(),
-                        };
-
-                        indexes_to_check.push_back(index);
-
-                        nodes.insert(index, Node::Option(false_option));
+                            nodes.insert(index, Node::Option(true_option));
+                        }
                     }
                 }
                 Node::Plant(_) => {}
