@@ -31,17 +31,11 @@ pub struct Key {
 }
 
 impl Key {
-    pub fn build(plants: Vec<Plant>) -> Result<Key> {
-        // create a new VecDeque of characteristics to check
-        let char_possibilities = ["arrangement", "leaf_type"];
-
-        let mut characteristic_order: VecDeque<&str> = VecDeque::from_iter(char_possibilities);
-
-        let mut nodes = KeyNodes::new();
+    pub fn build(plants: Vec<Plant>, characteristics: Vec<String>) -> Result<Key> {
+        let mut characteristic_order: VecDeque<String> = VecDeque::from_iter(characteristics);
 
         let mut index = 0;
 
-        // TODO: make VecDeque
         let mut indexes_to_check: VecDeque<u32> = VecDeque::new();
 
         let initial_option = OptionNode {
@@ -51,6 +45,8 @@ impl Key {
             characteristic: String::from(characteristic_order.pop_front().unwrap()),
         };
 
+        let mut nodes = KeyNodes::new();
+
         nodes.insert(index, Node::Option(initial_option));
 
         // start by checking index 0
@@ -58,16 +54,20 @@ impl Key {
 
         loop {
             if indexes_to_check.is_empty() {
-                // exit loop
                 break Ok(Key { nodes });
             }
 
-            // TOOD: pop
-            let current_index = indexes_to_check[0];
+            let current_index = indexes_to_check.pop_front().unwrap();
 
             let current_node = nodes.get(&current_index).unwrap();
 
-            let next_characteristic = characteristic_order.pop_front();
+            let next_characteristic = match characteristic_order.pop_front() {
+                Some(characteristic) => characteristic,
+                None => {
+                    // exit loop
+                    break Ok(Key { nodes });
+                }
+            };
 
             match current_node {
                 Node::Option(option) => {
@@ -113,7 +113,7 @@ impl Key {
                             let true_option = OptionNode {
                                 prev_node: Some(current_index),
                                 possibilities: group,
-                                characteristic: next_characteristic.unwrap().to_string(),
+                                characteristic: next_characteristic.clone(),
                             };
 
                             indexes_to_check.push_back(index);
@@ -124,8 +124,18 @@ impl Key {
                 }
                 Node::Plant(_) => {}
             }
-
-            indexes_to_check.pop_front();
         }
     }
 }
+
+// TODO
+// mod test {
+//     use super::*;
+
+
+    // TODO: test for plants that won't be sorted completely because there are no more characteristics
+    // #[test]
+    // mod build_happy_path {}
+
+    // TODO: test for more characteristics than needed
+// }
