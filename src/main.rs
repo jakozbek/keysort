@@ -8,5 +8,5 @@ fn main() {
 
     let key = Key::build(test_plants, characteristics_order).unwrap();
 
-    println!("{:?}", key);
+    println!("{}", key);
 }

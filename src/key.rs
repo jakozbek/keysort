@@ -1,20 +1,29 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    fmt::Display,
+};
 
-use crate::plant::Plant;
+use crate::{decision::Characteristic, plant::Plant};
 
 use anyhow::Result;
 
 #[derive(Debug)]
 struct OptionNode {
-    prev_node: Option<u32>,
+    pub left_node: Option<u32>,
+    pub right_node: Option<u32>,
     possibilities: Vec<Plant>,
-    characteristic: String,
+    characteristic: Option<String>,
 }
 
 #[derive(Debug)]
 struct PlantNode {
     plant: Plant,
-    prev_node: u32,
+}
+
+impl Display for PlantNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.plant)
+    }
 }
 
 #[derive(Debug)]
@@ -39,10 +48,11 @@ impl Key {
         let mut indexes_to_check: VecDeque<u32> = VecDeque::new();
 
         let initial_option = OptionNode {
-            prev_node: None,
+            left_node: None,
+            right_node: None,
             possibilities: plants,
             // arrangement is initial characteristic
-            characteristic: String::from(characteristic_order.pop_front().unwrap()),
+            characteristic: characteristic_order.pop_front(),
         };
 
         let mut nodes = KeyNodes::new();
@@ -59,68 +69,91 @@ impl Key {
 
             let current_index = indexes_to_check.pop_front().unwrap();
 
-            let current_node = nodes.get(&current_index).unwrap();
+            let mut left_child_node: Option<u32> = None;
+            let mut right_child_node: Option<u32> = None;
 
-            let next_characteristic = match characteristic_order.pop_front() {
-                Some(characteristic) => characteristic,
-                None => {
-                    // exit loop
-                    break Ok(Key { nodes });
-                }
-            };
+            {
+                let current_node = nodes.get(&current_index).unwrap();
 
-            match current_node {
-                Node::Option(option) => {
-                    let characteristic = &option.characteristic;
+                let next_characteristic = characteristic_order.pop_front();
 
-                    let mut true_group = Vec::new();
-                    let mut false_group = Vec::new();
-
-                    for plant in &option.possibilities {
-                        let plant_characteristics = &plant.characteristics;
-
-                        // TODO: handle unwrap
-                        let decision = plant_characteristics.get(characteristic).unwrap();
-
-                        if decision.decide() {
-                            true_group.push(plant.clone());
-                        } else {
-                            false_group.push(plant.clone());
-                        }
-                    }
-
-                    // increment the index for the next node
-                    index = index + 1;
-
-                    for boolean in [true, false] {
-                        let mut group = if boolean {
-                            true_group.clone()
-                        } else {
-                            false_group.clone()
+                match current_node {
+                    Node::Option(option_node) => {
+                        let characteristic = match &option_node.characteristic {
+                            Some(characteristic) => characteristic,
+                            None => {
+                                // exit loop
+                                continue;
+                            }
                         };
 
-                        if group.len() == 1 {
-                            let plant = group.pop()
-                                .expect("Plant will always exist because we check the lenght");
+                        let mut true_group = Vec::new();
+                        let mut false_group = Vec::new();
 
-                            let plant_node = PlantNode {
-                                plant,
-                                prev_node: current_index,
+                        for plant in &option_node.possibilities {
+                            let plant_characteristics = &plant.characteristics;
+
+                            // TODO: handle unwrap
+                            let decision = plant_characteristics.get(characteristic).unwrap();
+
+                            if decision.decide() {
+                                true_group.push(plant.clone());
+                            } else {
+                                false_group.push(plant.clone());
+                            }
+                        }
+
+                        for boolean in [true, false] {
+                            // increment the index for the next node
+                            index = index + 1;
+
+                            let mut group = if boolean {
+                                true_group.clone()
+                            } else {
+                                false_group.clone()
                             };
 
-                            nodes.insert(index, Node::Plant(plant_node));
-                        } else {
-                            let true_option = OptionNode {
-                                prev_node: Some(current_index),
-                                possibilities: group,
-                                characteristic: next_characteristic.clone(),
+                            let node = if group.len() == 1 {
+                                let plant = group
+                                    .pop()
+                                    .expect("Plant will always exist because we check the lenght");
+
+                                let plant_node = PlantNode { plant };
+
+                                Node::Plant(plant_node)
+                            } else {
+                                // left and right node will be added when children are created
+                                let option_node = OptionNode {
+                                    left_node: None,
+                                    right_node: None,
+                                    possibilities: group,
+                                    characteristic: next_characteristic.clone(),
+                                };
+
+                                indexes_to_check.push_back(index);
+
+                                Node::Option(option_node)
                             };
 
-                            indexes_to_check.push_back(index);
+                            nodes.insert(index, node);
 
-                            nodes.insert(index, Node::Option(true_option));
+                            if boolean {
+                                left_child_node = Some(index);
+                            } else {
+                                right_child_node = Some(index);
+                            }
                         }
                     }
+                    Node::Plant(_) => {}
+                }
+            }
+
+            let mutable_node_current = nodes.get_mut(&current_index).unwrap();
+
+            match mutable_node_current {
+                Node::Option(option_node) => {
+                    option_node.left_node = left_child_node;
+                    option_node.right_node = right_child_node;
                 }
                 Node::Plant(_) => {}
             }
@@ -128,14 +161,86 @@ impl Key {
     }
 }
 
+// left is true, right is false
+fn pre_order_traversal(
+    node: &Node,
+    nodes: &KeyNodes,
+    f: &mut std::fmt::Formatter<'_>,
+    index: &mut u32,
+    depth: u32,
+) {
+    for _ in 0..depth {
+        write!(f, " ").unwrap();
+    }
+
+    match node {
+        Node::Option(option_node) => {
+            *index = *index + 1;
+            let node_index = *index;
+
+            let node_characteristic = option_node.characteristic.as_ref().unwrap();
+
+            write!(
+                f,
+                "{}: {} is {}\n",
+                node_index,
+                node_characteristic,
+                Characteristic::show_option(node_characteristic, true)
+            )
+            .unwrap();
+
+            if let Some(left_node_idx) = option_node.left_node {
+                let left_node = nodes.get(&left_node_idx).unwrap();
+                pre_order_traversal(&left_node, nodes, f, index, node_index + 1);
+            }
+
+            for _ in 0..depth {
+                write!(f, " ").unwrap();
+            }
+
+            write!(
+                f,
+                "{}: {} is {}\n",
+                node_index,
+                node_characteristic,
+                Characteristic::show_option(node_characteristic, false)
+            )
+            .unwrap();
+
+            if let Some(right_node_idx) = option_node.right_node {
+                let right_node = nodes.get(&right_node_idx).unwrap();
+                pre_order_traversal(&right_node, nodes, f, index, node_index + 1);
+            }
+        }
+        Node::Plant(plant_node) => {
+            write!(f, "{}\n", plant_node.plant).unwrap();
+        }
+    }
+}
+
+impl Display for Key {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut global_index = 0;
+
+        pre_order_traversal(
+            &self.nodes.get(&0).unwrap(),
+            &self.nodes,
+            f,
+            &mut global_index,
+            0,
+        );
+
+        Ok(())
+    }
+}
+
 // TODO
 // mod test {
 //     use super::*;
 
+// TODO: test for plants that won't be sorted completely because there are no more characteristics
+// #[test]
+// mod build_happy_path {}
 
-    // TODO: test for plants that won't be sorted completely because there are no more characteristics
-    // #[test]
-    // mod build_happy_path {}
-
-    // TODO: test for more characteristics than needed
+// TODO: test for more characteristics than needed
 // }

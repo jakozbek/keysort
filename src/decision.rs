@@ -19,6 +19,15 @@ pub enum Arrangement {
     Alternate,
 }
 
+impl Arrangement {
+    pub fn show_option(decision: bool) -> String {
+        match decision {
+            true => String::from("opposite"),
+            false => String::from("alternate"),
+        }
+    }
+}
+
 impl Decision for Arrangement {
     fn decide(&self) -> bool {
         match self {
@@ -39,6 +48,32 @@ impl Decision for LeafType {
         match self {
             LeafType::Compound => true,
             LeafType::Simple => false,
+        }
+    }
+}
+
+impl LeafType {
+    pub fn show_option(decision: bool) -> String {
+        match decision {
+            true => String::from("compound"),
+            false => String::from("simple"),
+        }
+    }
+}
+
+pub enum Characteristic {
+    Arrangement(Arrangement),
+    LeafType(LeafType),
+}
+
+impl Characteristic {
+    pub fn show_option(char_string: &str, decision: bool) -> String {
+        if char_string == "arrangement" {
+            Arrangement::show_option(decision)
+        } else if char_string == "leaf_type" {
+            LeafType::show_option(decision)
+        } else {
+            String::from("unknown")
         }
     }
 }
