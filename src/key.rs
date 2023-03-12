@@ -230,11 +230,9 @@ impl Key {
                 self.insert_child_nodes(next_nodes.as_slice())?;
 
                 for node in next_nodes {
+                    self.current_node_index = self.current_node_index + 1;
                     indexes_to_check.push_back(node.get_index());
                 }
-
-                // increment by 2 because we added 2 nodes
-                self.current_node_index = self.current_node_index + 2;
             }
         }
 
@@ -310,4 +308,3 @@ impl Display for Key {
         Ok(())
     }
 }
-
