@@ -8,5 +8,10 @@
     "name": "leaf_type",
     "true_option": "simple",
     "false_option": "compound"
+  },
+  {
+    "name": "serration",
+    "true_option": "serrate",
+    "false_option": "entire"
   }
 ]

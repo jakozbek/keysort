@@ -1,6 +1,6 @@
 use std::fs;
 
-use keysort::{characteristic::Characteristic, plant::Plant, key::Key};
+use keysort::{characteristic::Characteristic, key::Key, plant::Plant};
 
 #[test]
 fn main() {
@@ -13,10 +13,12 @@ fn main() {
     let plants_file_string =
         fs::read_to_string("test_data/test_plants.json").expect("Unable to read file");
 
-    let plants: Vec<Plant> = serde_json::from_str(&plants_file_string)
-        .expect("Unable to parse characteristics file");
+    let plants: Vec<Plant> =
+        serde_json::from_str(&plants_file_string).expect("Unable to parse characteristics file");
 
-    let key = Key::build(&plants, &characteristics).unwrap();
+    let mut key = Key::new();
+    key.build(&plants, &characteristics).unwrap();
 
-    println!("{}", key)
+    println!("{:?}", key);
+    println!("{}", key);
 }

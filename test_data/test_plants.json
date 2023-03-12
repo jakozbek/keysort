@@ -41,6 +41,29 @@
             {
                 "name": "leaf_type",
                 "value": "simple"
+            },
+            {
+                "name": "serration",
+                "value": "serrate"
+            }
+        ]
+    },
+    {
+        "name": "Sassafras",
+        "genus": "Sassafras",
+        "species": "albidum",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "alternate"
+            },
+            {
+                "name": "leaf_type",
+                "value": "simple"
+            },
+            {
+                "name": "serration",
+                "value": "entire"
             }
         ]
     },
