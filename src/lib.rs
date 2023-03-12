@@ -1,4 +1,4 @@
-mod decision;
+pub mod characteristic;
 pub mod key;
-mod plant;
+pub mod plant;
 pub mod test_data;

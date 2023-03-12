@@ -1,0 +1,63 @@
+[
+    {
+        "name": "Red Maple",
+        "genus": "Acer",
+        "species": "rubrum",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "opposite"
+            },
+            {
+                "name": "leaf_type",
+                "value": "simple"
+            }
+        ]
+    },
+    {
+        "name": "White Ash",
+        "genus": "Fraxinus",
+        "species": "americana",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "opposite"
+            },
+            {
+                "name": "leaf_type",
+                "value": "compound"
+            }
+        ]
+    },
+    {
+        "name": "Black Cherry",
+        "genus": "Prunus",
+        "species": "serotina",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "alternate"
+            },
+            {
+                "name": "leaf_type",
+                "value": "simple"
+            }
+        ]
+    },
+    {
+        "name": "Shagbark Hickory",
+        "genus": "Carya",
+        "species": "ovata",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "alternate"
+            },
+            {
+                "name": "leaf_type",
+                "value": "compound"
+            }
+        ]
+    }
+]
+

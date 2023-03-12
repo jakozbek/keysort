@@ -3,7 +3,8 @@ use std::{
     fmt::Display,
 };
 
-use crate::{decision::Characteristic, plant::Plant};
+use crate::characteristic::{Characteristic, KeyDecision};
+use crate::plant::Plant;
 
 use anyhow::Result;
 
@@ -12,7 +13,7 @@ struct OptionNode {
     pub left_node: Option<u32>,
     pub right_node: Option<u32>,
     possibilities: Vec<Plant>,
-    characteristic: Option<String>,
+    pub characteristic: Option<Characteristic>,
 }
 
 #[derive(Debug)]
@@ -40,8 +41,7 @@ pub struct Key {
 }
 
 impl Key {
-    pub fn build(plants: Vec<Plant>, characteristics: Vec<String>) -> Result<Key> {
-        let mut characteristic_order: VecDeque<String> = VecDeque::from_iter(characteristics);
+    pub fn build(plants: &Vec<Plant>, characteristics: &Vec<Characteristic>) -> Result<Key> {
 
         let mut index = 0;
 
@@ -50,9 +50,8 @@ impl Key {
         let initial_option = OptionNode {
             left_node: None,
             right_node: None,
-            possibilities: plants,
-            // arrangement is initial characteristic
-            characteristic: characteristic_order.pop_front(),
+            possibilities: plants.clone(),
+            characteristic: characteristics.get(0).cloned(),
         };
 
         let mut nodes = KeyNodes::new();
@@ -75,7 +74,7 @@ impl Key {
             {
                 let current_node = nodes.get(&current_index).unwrap();
 
-                let next_characteristic = characteristic_order.pop_front();
+                let next_characteristic = characteristics.get((index + 1) as usize);
 
                 match current_node {
                     Node::Option(option_node) => {
@@ -93,10 +92,12 @@ impl Key {
                         for plant in &option_node.possibilities {
                             let plant_characteristics = &plant.characteristics;
 
-                            // TODO: handle unwrap
-                            let decision = plant_characteristics.get(characteristic).unwrap();
+                            let char_to_check =
+                                plant_characteristics.get(&characteristic.name).unwrap();
 
-                            if decision.decide() {
+                            let decision = characteristic.get_decision(char_to_check)?;
+
+                            if decision {
                                 true_group.push(plant.clone());
                             } else {
                                 false_group.push(plant.clone());
@@ -127,7 +128,7 @@ impl Key {
                                     left_node: None,
                                     right_node: None,
                                     possibilities: group,
-                                    characteristic: next_characteristic.clone(),
+                                    characteristic: next_characteristic.cloned(),
                                 };
 
                                 indexes_to_check.push_back(index);
@@ -180,14 +181,7 @@ fn pre_order_traversal(
 
             let node_characteristic = option_node.characteristic.as_ref().unwrap();
 
-            write!(
-                f,
-                "{}: {} is {}\n",
-                node_index,
-                node_characteristic,
-                Characteristic::show_option(node_characteristic, true)
-            )
-            .unwrap();
+            write!(f, "{}: {} is {}\n", node_index, node_characteristic.name, node_characteristic.true_option).unwrap();
 
             if let Some(left_node_idx) = option_node.left_node {
                 let left_node = nodes.get(&left_node_idx).unwrap();
@@ -202,8 +196,8 @@ fn pre_order_traversal(
                 f,
                 "{}: {} is {}\n",
                 node_index,
-                node_characteristic,
-                Characteristic::show_option(node_characteristic, false)
+                node_characteristic.name,
+                node_characteristic.false_option
             )
             .unwrap();
 

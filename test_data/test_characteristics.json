@@ -1,0 +1,12 @@
+[
+  {
+    "name": "arrangement",
+    "true_option": "opposite",
+    "false_option": "alternate"
+  },
+  {
+    "name": "leaf_type",
+    "true_option": "simple",
+    "false_option": "compound"
+  }
+]
