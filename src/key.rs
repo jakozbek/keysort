@@ -26,7 +26,8 @@ impl OptionNode {
         } else if self.right_node.is_none() {
             self.right_node = Some(node_index);
         } else {
-            panic!("Option node is full");
+            let msg = format!("Option node is full at index {}", self.index);
+            panic!("{}", msg)
         }
     }
 }
@@ -167,14 +168,6 @@ impl Key {
         }
     }
 
-    fn insert_child_nodes(&mut self, nodes: &[Node]) -> Result<()> {
-        for node in nodes {
-            self.nodes.insert(node.get_index(), node.clone());
-        }
-
-        Ok(())
-    }
-
     pub fn build(&mut self, plants: &[Plant], characteristics: &[Characteristic]) -> Result<()> {
         let initial_option = OptionNode {
             index: self.current_node_index,
@@ -187,27 +180,15 @@ impl Key {
         self.nodes
             .insert(self.current_node_index, Node::Option(initial_option));
 
-        let mut indexes_to_check: VecDeque<u32> = VecDeque::new();
+        let mut indexes_to_check: Vec<u32> = Vec::new();
 
         // start by checking initial index
-        indexes_to_check.push_front(self.current_node_index);
+        indexes_to_check.push(self.current_node_index);
 
         for (char_idx, _characteristic) in characteristics.iter().enumerate() {
-            let mut current_indexes_to_check = indexes_to_check.clone();
+            let mut current_indexes_to_check: VecDeque<u32> = indexes_to_check.clone().into();
 
-            loop {
-                // See if there is an index to check
-                let current_index = match current_indexes_to_check.pop_front() {
-                    Some(index) => index,
-                    None => {
-                        // No more indices to check
-                        break;
-                    }
-                };
-
-                // pop in the next indexes to check as well
-                indexes_to_check.pop_front();
-
+            while let Some(current_index) = current_indexes_to_check.pop_front() {
                 let next_nodes = {
                     let current_node = self.nodes.get_mut(&current_index).unwrap_or_else(|| {
                         panic!(
@@ -227,11 +208,22 @@ impl Key {
                     handle_option_node(option_node, next_characteristic, self.current_node_index)?
                 };
 
-                self.insert_child_nodes(next_nodes.as_slice())?;
+                // Remove the current index from the indexes to check if it generated new nodes
+                if !next_nodes.is_empty() {
+                    if let Some(idx) = indexes_to_check
+                        .iter()
+                        .position(|value| *value == current_index)
+                    {
+                        indexes_to_check.remove(idx);
+                    }
+                }
 
                 for node in next_nodes {
+                    self.nodes.insert(node.get_index(), node.clone());
+
                     self.current_node_index += 1;
-                    indexes_to_check.push_back(node.get_index());
+
+                    indexes_to_check.push(node.get_index());
                 }
             }
         }
