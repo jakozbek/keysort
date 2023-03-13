@@ -37,7 +37,7 @@ impl Debug for OptionNode {
             Some(characteristic) => characteristic.name.clone(),
             None => "None".to_string(),
         };
-        write!(f, "OptionNode {{ left_node: {:?}, right_node: {:?}, possibilities: {:?}, characteristic: {:?} }}\n", self.left_node, self.right_node, self.possibilities.len(), characteristic)
+        writeln!(f, "OptionNode {{ left_node: {:?}, right_node: {:?}, possibilities: {:?}, characteristic: {:?} }}", self.left_node, self.right_node, self.possibilities.len(), characteristic)
     }
 }
 
@@ -49,7 +49,7 @@ struct PlantNode {
 
 impl Debug for PlantNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PlantNode {{ plant: {:?} }}\n", self.plant)
+        writeln!(f, "PlantNode {{ plant: {:?} }}", self.plant)
     }
 }
 
@@ -82,6 +82,12 @@ pub struct Key {
     nodes: KeyNodes,
 }
 
+impl Default for Key {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn handle_option_node(
     option_node: &mut OptionNode,
     next_characteristic: Option<&Characteristic>,
@@ -89,13 +95,12 @@ fn handle_option_node(
 ) -> Result<Vec<Node>> {
     let mut nodes = vec![];
 
-    let characteristic = &option_node.characteristic.clone().expect(
-        format!(
+    let characteristic = &option_node.characteristic.clone().unwrap_or_else(|| {
+        panic!(
             "Characteristic should exist at node {:?} with possibilities: {:?}",
             option_node, option_node.possibilities
         )
-        .as_str(),
-    );
+    });
 
     let mut true_group = Vec::new();
     let mut false_group = Vec::new();
@@ -115,7 +120,7 @@ fn handle_option_node(
     }
 
     for boolean in [true, false] {
-        current_node_index = current_node_index + 1;
+        current_node_index += 1;
 
         let mut group = if boolean {
             true_group.clone()
@@ -170,16 +175,12 @@ impl Key {
         Ok(())
     }
 
-    pub fn build(
-        &mut self,
-        plants: &Vec<Plant>,
-        characteristics: &Vec<Characteristic>,
-    ) -> Result<()> {
+    pub fn build(&mut self, plants: &[Plant], characteristics: &[Characteristic]) -> Result<()> {
         let initial_option = OptionNode {
             index: self.current_node_index,
             left_node: None,
             right_node: None,
-            possibilities: plants.clone(),
+            possibilities: plants.to_vec(),
             characteristic: characteristics.get(0).cloned(),
         };
 
@@ -208,15 +209,14 @@ impl Key {
                 indexes_to_check.pop_front();
 
                 let next_nodes = {
-                    let current_node = self.nodes.get_mut(&current_index).expect(
-                        format!(
+                    let current_node = self.nodes.get_mut(&current_index).unwrap_or_else(|| {
+                        panic!(
                             "Node {} should exist if it was in indexes_to_check",
                             current_index
                         )
-                        .as_str(),
-                    );
+                    });
 
-                    let next_characteristic = characteristics.get((char_idx + 1) as usize);
+                    let next_characteristic = characteristics.get(char_idx + 1);
 
                     let option_node = if let Node::Option(option_node) = current_node {
                         option_node
@@ -230,7 +230,7 @@ impl Key {
                 self.insert_child_nodes(next_nodes.as_slice())?;
 
                 for node in next_nodes {
-                    self.current_node_index = self.current_node_index + 1;
+                    self.current_node_index += 1;
                     indexes_to_check.push_back(node.get_index());
                 }
             }
@@ -254,41 +254,41 @@ fn pre_order_traversal(
 
     match node {
         Node::Option(option_node) => {
-            *index = *index + 1;
+            *index += 1;
             let node_index = *index;
 
             let node_characteristic = option_node.characteristic.as_ref().unwrap();
 
-            write!(
+            writeln!(
                 f,
-                "{}: {} is {}\n",
+                "{}: {} is {}",
                 node_index, node_characteristic.name, node_characteristic.true_option
             )
             .unwrap();
 
             if let Some(left_node_idx) = option_node.left_node {
                 let left_node = nodes.get(&left_node_idx).unwrap();
-                pre_order_traversal(&left_node, nodes, f, index, node_index + 1);
+                pre_order_traversal(left_node, nodes, f, index, node_index + 1);
             }
 
             for _ in 0..depth {
                 write!(f, " ").unwrap();
             }
 
-            write!(
+            writeln!(
                 f,
-                "{}: {} is {}\n",
+                "{}: {} is {}",
                 node_index, node_characteristic.name, node_characteristic.false_option
             )
             .unwrap();
 
             if let Some(right_node_idx) = option_node.right_node {
                 let right_node = nodes.get(&right_node_idx).unwrap();
-                pre_order_traversal(&right_node, nodes, f, index, node_index + 1);
+                pre_order_traversal(right_node, nodes, f, index, node_index + 1);
             }
         }
         Node::Plant(plant_node) => {
-            write!(f, "{}\n", plant_node.plant).unwrap();
+            writeln!(f, "{}", plant_node.plant).unwrap();
         }
     }
 }
@@ -298,7 +298,7 @@ impl Display for Key {
         let mut global_index = 0;
 
         pre_order_traversal(
-            &self.nodes.get(&0).unwrap(),
+            self.nodes.get(&0).unwrap(),
             &self.nodes,
             f,
             &mut global_index,
