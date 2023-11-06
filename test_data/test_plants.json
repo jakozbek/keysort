@@ -11,6 +11,29 @@
             {
                 "name": "leaf_type",
                 "value": "simple"
+            },
+            {
+                "name": "lobing",
+                "value": "lobed"
+            }
+        ]
+    },
+    {
+        "name": "Dogwood",
+        "genus": "Cornus",
+        "species": "florida",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "opposite"
+            },
+            {
+                "name": "leaf_type",
+                "value": "simple"
+            },
+            {
+                "name": "lobing",
+                "value": "unlobed"
             }
         ]
     },
@@ -26,6 +49,29 @@
             {
                 "name": "leaf_type",
                 "value": "compound"
+            },
+            {
+                "name": "compound_type",
+                "value": "pinnate"
+            }
+        ]
+    },
+    {
+        "name": "Red Buckeye",
+        "genus": "Aesculus",
+        "species": "pavia",
+        "characteristics": [
+            {
+                "name": "arrangement",
+                "value": "opposite"
+            },
+            {
+                "name": "leaf_type",
+                "value": "compound"
+            },
+            {
+                "name": "compound_type",
+                "value": "palmate"
             }
         ]
     },

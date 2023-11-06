@@ -19,6 +19,6 @@ fn main() {
     let mut key = Key::new();
     key.build(&plants, &characteristics).unwrap();
 
-    println!("{:?}", key);
+    // println!("{:?}", key);
     println!("{}", key);
 }

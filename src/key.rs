@@ -38,7 +38,7 @@ impl Debug for OptionNode {
             Some(characteristic) => characteristic.name.clone(),
             None => "None".to_string(),
         };
-        writeln!(f, "OptionNode {{ left_node: {:?}, right_node: {:?}, possibilities: {:?}, characteristic: {:?} }}", self.left_node, self.right_node, self.possibilities.len(), characteristic)
+        write!(f, "OptionNode {{ index: {}, left_node: {:?}, right_node: {:?}, possibilities: {:?}, characteristic: {:?} }}\n", self.index, self.left_node, self.right_node, self.possibilities.len(), characteristic)
     }
 }
 
@@ -77,16 +77,10 @@ impl Node {
 
 type KeyNodes = HashMap<u32, Node>;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Key {
     current_node_index: u32,
     nodes: KeyNodes,
-}
-
-impl Default for Key {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 fn handle_option_node(
@@ -106,10 +100,18 @@ fn handle_option_node(
     let mut true_group = Vec::new();
     let mut false_group = Vec::new();
 
+    let mut plants_without_characteristic = 0;
+
     for plant in &option_node.possibilities {
         let plant_characteristics = &plant.characteristics;
 
-        let char_to_check = plant_characteristics.get(&characteristic.name).unwrap();
+        let char_to_check = match plant_characteristics.get(&characteristic.name) {
+            Some(characteristic) => characteristic,
+            None => {
+                plants_without_characteristic = plants_without_characteristic + 1;
+                continue;
+            }
+        };
 
         let decision = characteristic.get_decision(char_to_check)?;
 
@@ -117,6 +119,18 @@ fn handle_option_node(
             true_group.push(plant.clone());
         } else {
             false_group.push(plant.clone());
+        }
+    }
+
+    if plants_without_characteristic > 0 {
+        if plants_without_characteristic == option_node.possibilities.len() {
+            // if we cannot separate based on existing characteristic, we will try the next and
+            // check again next round
+            option_node.characteristic = next_characteristic.cloned();
+            // nodes should be with a length of 0
+            return Ok(nodes);
+        } else {
+            panic!("There should not exist a node where some have a characteristic and some don't");
         }
     }
 
@@ -219,11 +233,13 @@ impl Key {
                 }
 
                 for node in next_nodes {
-                    self.nodes.insert(node.get_index(), node.clone());
+                    let new_node_index = node.get_index();
+
+                    self.nodes.insert(new_node_index, node.clone());
 
                     self.current_node_index += 1;
 
-                    indexes_to_check.push(node.get_index());
+                    indexes_to_check.push(new_node_index);
                 }
             }
         }

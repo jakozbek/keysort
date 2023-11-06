@@ -10,8 +10,18 @@
     "false_option": "compound"
   },
   {
+    "name": "compound_type",
+    "true_option": "pinnate",
+    "false_option": "palmate"
+  },
+  {
     "name": "serration",
     "true_option": "serrate",
     "false_option": "entire"
+  },
+  {
+    "name": "lobing",
+    "true_option": "lobed",
+    "false_option": "unlobed"
   }
 ]
